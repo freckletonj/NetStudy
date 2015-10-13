@@ -1,3 +1,6 @@
+Motifs Project
+-------------
+
 In this little project we wanted to check the
 - average number of concepts
 - average sum of the concepts' small phi values
@@ -39,3 +42,11 @@ before doing the rest.
 Best,
 
 Larissa
+
+
+
+Other Projects
+--------------
+
+<put em here>
+
