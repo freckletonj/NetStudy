@@ -78,12 +78,12 @@ def main():
     seen_tpms_by_condition = {}
 
 
-    MECHANISMS = [OR, AND, NULL, ]
+    MECHANISMS = [OR, AND, NULL, XOR]
 
     # arr[x] = [mechs] where x is the sum of inputs, and [mechs] is the set of acceptable mechs
     INPUTS_SUM_TO_MECH_MAP = [[NULL],
                               [OR],
-                              [OR, AND, ],]
+                              [OR, AND, XOR ],]
 
     duplicate_tpms = 0
     
@@ -132,6 +132,8 @@ def main():
 
                 if len(constellations) > 0:
                     seen_tpms_by_condition[cm]['phi_concepts'].append(mean([x.phi for x in constellations]))
+                else:
+                    seen_tpms_by_condition[cm]['phi_concepts'].append(0)
 
                     
                 seen_tpms_by_condition[cm]['phi_network'].append(pyphi.compute.big_phi(subsystem))
@@ -169,7 +171,7 @@ def main():
     
     for i, m in enumerate(motifs_mapping):
         row = seen[to_2d_tuple(normalize_cm(m))]
-        print('%2d'%(i+1), '\t',
+        print('\'%2d'%(i+1), '\t',
               m, '\t',
               len( row['seen']), '\t',
               '%.2f' % (mean(row['num_concepts'])) if len(row['num_concepts'])>0 else 'null' , '\t',
