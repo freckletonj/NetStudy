@@ -8,9 +8,12 @@ And comparing their results against the theory of Integrated Information
 
 import numpy as np
 from itertools import combinations, permutations, product
+from functools import reduce
+
 from normalize_cm import normalize_cm
 from normalize_tpm import normalize_tpm
-from generate_tpm import generate_tpm, nodes_to_short, AND, OR, XOR
+from generate_tpm import generate_tpm, nodes_to_short, AND, OR, XOR, NULL
+
 
 
 import pyphi
@@ -29,8 +32,8 @@ def main():
 
     unique_cms = set() #there will be 104 unique cms at 3 nodes with recurrent loops
 
-    all_activations =  [p for p in product(*[[0,1]*NUM_NODES])] # all possible activation states
-
+    all_activations =  [p for p in product([0,1], repeat=NUM_NODES)] # all possible activation states
+    past_state = [0 for _ in range(NUM_NODES)]
 
     # look at all cms, add uniques to unique_cms
     for cm in cms:
@@ -40,15 +43,21 @@ def main():
 
 
 
+
+
+
+
+
+        
     ########################################################################################
     # Condition (1)  -  No self loops (that is each node has at most 2 inputs and 2 outputs):
     # number of cms in condition 1:
     # 3 nodes = 13
     # 4 nodes = 202
 
-    has_self_loops = lambda cm: bool(len([1 for i in range(len(cm[0])) if cm[i][i] == 1]))
+    has_self_loops = lambda cm: bool(len([1 for i in range(NUM_NODES) if cm[i][i] == 1]))
     has_unconnected_node = lambda cm: bool(len(
-        [1 for i in range(len(cm[0])) if
+        [1 for i in range(NUM_NODES) if
          sum(cm[i])==0 and
          sum(np.array(cm).T.tolist()[0])==0
      ]))
@@ -65,9 +74,13 @@ def main():
 
     seen_tpms_by_condition = {}
 
-    # Testing: Short Circuit these lists:
-    #all_activations = [[0,1,1]]
-    MECHANISMS = [OR, AND]
+
+    MECHANISMS = [OR, AND, NULL, XOR]
+
+    # arr[x] = [mechs] where x is the sum of inputs, and [mechs] is the set of acceptable mechs
+    INPUTS_SUM_TO_MECH_MAP = [[NULL],
+                              [OR],
+                              [OR, AND, XOR],]
 
     duplicate_tpms = 0
     
@@ -76,20 +89,33 @@ def main():
 
         seen_tpms_by_condition[cm] = set()
 
-        for current_state in all_activations:
-            #print("CURRENT STATE: ", current_state)
+        for nodes in product(MECHANISMS, repeat=NUM_NODES):
+            #print("NODES: ", nodes_to_short(nodes))
 
-            for nodes in product(MECHANISMS, repeat=len(cm[0])):
-                #print("NODES: ", nodes_to_short(nodes))
+            # ignore systems that don't match the INPUTS_SUM_TO_MECH_MAP
+            ignore = False
+            for sm, mechs in enumerate(INPUTS_SUM_TO_MECH_MAP):
+                if not all_nodes_where_incoming_sum_is_x_are_mech_y(cm, nodes, sm, mechs):
+                    ignore = True
+                    break
 
-                tpm = normalize_tpm(generate_tpm(nodes, cm))
+            if ignore:
+                continue
 
-                # continue next loop if this tpm has already been seen on this condition
-                if to_2d_tuple(tpm) in seen_tpms_by_condition[to_2d_tuple(cm)]:                    
-                    duplicate_tpms += 1
-                    continue
+            tpm = generate_tpm(nodes, cm)
+            n_tpm = normalize_tpm(tpm)
+            
+            # continue next loop if this tpm has already been seen on this condition
+            if to_2d_tuple(n_tpm) in seen_tpms_by_condition[to_2d_tuple(cm)]:                    
+                duplicate_tpms += 1
+                continue
+                
+            seen_tpms_by_condition[cm].add(to_2d_tuple(n_tpm))
+                
+            for current_state in all_activations:
+                #print("CURRENT STATE: ", current_state)
 
-                seen_tpms_by_condition[cm].add(to_2d_tuple(tpm))
+                pass
 
                 # network = pyphi.Network(tpm, current_state, past_state, connectivity_matrix=cm)
 
@@ -97,12 +123,39 @@ def main():
 
                 # main_complex = pyphi.compute.main_complex(network)
 
+
+
+
+
+                
     print("\n"*3)
-    for key, value in seen_tpms_by_condition.items():
-        print(key,"--", len(value))
+
+    #from collections import OrderedDict
+    #seen = OrderedDict(sorted(seen_tpms_by_condition.items()))
+
+    motifs_mapping = [
+        [[0,0,0], [1,0,0], [1,0,0]],
+        [[0,0,0], [1,0,0], [0,1,0]],
+        [[0,0,0], [1,0,1], [0,0,0]],
+        [[0,1,0], [1,0,0], [1,0,0]],
+        [[0,0,0], [1,0,0], [1,1,0]],
+        [[0,1,1], [1,0,0], [0,0,0]],
+        [[0,0,1], [1,0,0], [0,1,0]],
+        [[0,1,0], [1,0,0], [1,1,0]],
+        [[0,1,1], [1,0,0], [1,0,0]],
+        [[0,1,0], [1,0,1], [1,0,0]],
+        [[0,0,0], [1,0,1], [1,1,0]],
+        [[0,1,1], [1,0,0], [1,1,0]],
+        [[0,1,1], [1,0,1], [1,1,0]],
+        ]
+
+    seen = seen_tpms_by_condition
+    
+    for i, m in enumerate(motifs_mapping):
+        print('%2d'%(i+1), '--', m, '--', len(seen[to_2d_tuple(normalize_cm(m))]))
+    
     print("Duplicate TPMS:", duplicate_tpms)
     
-
 
 
 
@@ -112,6 +165,15 @@ def main():
 
 
 
+
+
+
+
+
+
+
+
+    
 
     ########################################################################################
     # Condition (2)  -   All the nodes have self loops
@@ -131,7 +193,64 @@ def main():
 #########################################################################################
 
 def to_2d_tuple(arr):
+    ''' takes a (mutable) 2D array and converts it to an (immutable) tuple '''
     return tuple(tuple(row) for row in arr)
+
+    
+def count_outgoing(cm):
+    '''
+    TODO: correct counts for non-deterministic connections
+    TODO: IE strengths aren't 0 or 1
+    
+    return the count of outgoing connections for each node
+
+    args:
+      cm: a connectivity matrix / 2d array
+          cm[0][x] = outgoing connections
+          cm[x][0] = incoming connections
+
+    returns:
+      a list of how many outgoing connections each node has, eg:
+      [2, 2, 0, 1]
+    
+      where node0 has 2 outgoing connections, node2 has none, etc.
+    '''
+    counts = [sum(row) for row in cm]
+    return counts
+
+    
+def count_incoming(cm):
+    '''
+    TODO: correct counts for non-deterministic connections
+    TODO: IE strengths aren't 0 or 1
+    
+    return the count of incoming connections for each node
+
+    args:
+      cm: a connectivity matrix / 2d array
+          cm[0][x] = outgoing connections
+          cm[x][0] = incoming connections
+
+    returns:
+      a list of how many incoming connections each node has, eg:
+      [2, 2, 0, 1]
+    
+      where node0 has 2 incoming connections, node2 has none, etc.
+    '''
+    counts = reduce(lambda xs, ys: [x+y for x, y in zip(xs, ys)], cm)
+    return counts
+
+def all_nodes_where_incoming_sum_is_x_are_mech_y(cm, nodes, sm, mechs):
+    # if a node has one input, it must be a COPY (IE OR)
+    
+    in_count = count_incoming(cm)
+    for count, node in zip(in_count, nodes):
+        if (count == sm):
+            if (node in mechs):
+                continue
+            return False
+    return True
+    
 
 
 

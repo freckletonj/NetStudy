@@ -22,7 +22,7 @@ MINORITY =  lambda xs: sum(xs) <= len(xs)/2
 PARITY =  lambda xs: sum(xs) % 2 == 0 #even parity
 GREATER_THAN_THRESHOLD = None
 LESS_THAN_THRESHOLD = None
-
+NULL = lambda _: False
 
 
     
@@ -65,6 +65,7 @@ def nodes_to_name(nodes):
         PARITY: "PARITY",
         GREATER_THAN_THRESHOLD: "GREATER_THAN_THRESHOLD",
         LESS_THAN_THRESHOLD: "LESS_THAN_THRESHOLD",
+        NULL: "NULL",
     }
         
     output = []
@@ -94,6 +95,7 @@ def nodes_to_short(nodes):
         PARITY: "P",
         GREATER_THAN_THRESHOLD: "G",
         LESS_THAN_THRESHOLD: "L",
+        NULL: "U",
     }
         
     output = []
