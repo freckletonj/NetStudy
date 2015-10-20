@@ -44,6 +44,27 @@ Best,
 Larissa
 
 
+#####################
+
+With 3 possible nodes you should be able to do all possible (8) states of the 3 nodes.
+And then yes the nodes in the motifs should have different mechanisms, for 1a) that would be ORs and Ands. All nodes with 2 inputs should equally often be ANDs and ORs (which should be the case automatically if you try all possible combinations) and all nodes with 1 input should be COPY's.
+
+######################
+
+3 nodes, not more - gotcha, I just didn't want to hardcode all 13, and it took a similar amount of time to write the code that could generate arbitrary numbers of nodes, I just whipped it out this morning.
+
+all 8 activation states - perfect
+
+so to clarify, for each condition, I will calculate 1. num of concepts, 2. phi of concepts, 3. Phi of network. I will do this for all current_states across all possible combinations of AND and OR nodes (single connections are COPY), and XOR when the condition asks for it.
+
+I guess this will boil down to 3 charts per condition (that can be overlaid) for each dependent variable.
+
+######################
+
+3 plots per condition, would be average num concepts etc. against motif # 1-13.
+
+
+
 
 Other Projects
 --------------
