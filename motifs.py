@@ -3,20 +3,23 @@
 For Studying : http://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.0020369
 And comparing their results against the theory of Integrated Information
 
+TODO: This code is built for deterministic networks, make it work for indeterminate ones as well
 
 '''
 
 import numpy as np
 from itertools import combinations, permutations, product
 from functools import reduce
+from statistics import mean
 
 from normalize_cm import normalize_cm
 from normalize_tpm import normalize_tpm
 from generate_tpm import generate_tpm, nodes_to_short, AND, OR, XOR, NULL
 
-
+from IPython.core.debugger import Tracer
 
 import pyphi
+
   
 # GENERATE TEST CMs #############################################################################
 # number of unique_cms:
@@ -75,19 +78,23 @@ def main():
     seen_tpms_by_condition = {}
 
 
-    MECHANISMS = [OR, AND, NULL, XOR]
+    MECHANISMS = [OR, AND, NULL, ]
 
     # arr[x] = [mechs] where x is the sum of inputs, and [mechs] is the set of acceptable mechs
     INPUTS_SUM_TO_MECH_MAP = [[NULL],
                               [OR],
-                              [OR, AND, XOR],]
+                              [OR, AND, ],]
 
     duplicate_tpms = 0
     
     for cm in cms1:
         #print("CONNECTIVITY MATRIX: ", cm)
 
-        seen_tpms_by_condition[cm] = set()
+        seen_tpms_by_condition[cm] = {}
+        seen_tpms_by_condition[cm]['seen'] = set()
+        seen_tpms_by_condition[cm]['num_concepts'] = []
+        seen_tpms_by_condition[cm]['phi_concepts'] = []
+        seen_tpms_by_condition[cm]['phi_network'] = []
 
         for nodes in product(MECHANISMS, repeat=NUM_NODES):
             #print("NODES: ", nodes_to_short(nodes))
@@ -106,25 +113,33 @@ def main():
             n_tpm = normalize_tpm(tpm)
             
             # continue next loop if this tpm has already been seen on this condition
-            if to_2d_tuple(n_tpm) in seen_tpms_by_condition[to_2d_tuple(cm)]:                    
+            if to_2d_tuple(n_tpm) in seen_tpms_by_condition[to_2d_tuple(cm)]['seen']:                    
                 duplicate_tpms += 1
                 continue
                 
-            seen_tpms_by_condition[cm].add(to_2d_tuple(n_tpm))
+            seen_tpms_by_condition[cm]['seen'].add(to_2d_tuple(n_tpm))
                 
             for current_state in all_activations:
                 #print("CURRENT STATE: ", current_state)
 
-                pass
+                network = pyphi.Network(tpm, current_state, past_state, connectivity_matrix=cm)
 
-                # network = pyphi.Network(tpm, current_state, past_state, connectivity_matrix=cm)
+                subsystem = pyphi.Subsystem(range(network.size), network)
 
-                # subsystem = pyphi.Subsystem(range(network.size), network)
+                constellations = pyphi.compute.constellation(subsystem)
+                
+                seen_tpms_by_condition[cm]['num_concepts'].append(len(constellations))
 
-                # main_complex = pyphi.compute.main_complex(network)
+                if len(constellations) > 0:
+                    seen_tpms_by_condition[cm]['phi_concepts'].append(mean([x.phi for x in constellations]))
 
+                    
+                seen_tpms_by_condition[cm]['phi_network'].append(pyphi.compute.big_phi(subsystem))
 
-
+                
+                #if cm == cms1[12]:
+                #    Tracer()()
+                
 
 
                 
@@ -133,6 +148,7 @@ def main():
     #from collections import OrderedDict
     #seen = OrderedDict(sorted(seen_tpms_by_condition.items()))
 
+    # motifs from the paper "Motifs in the Brain", same ordering
     motifs_mapping = [
         [[0,0,0], [1,0,0], [1,0,0]],
         [[0,0,0], [1,0,0], [0,1,0]],
@@ -152,11 +168,25 @@ def main():
     seen = seen_tpms_by_condition
     
     for i, m in enumerate(motifs_mapping):
-        print('%2d'%(i+1), '--', m, '--', len(seen[to_2d_tuple(normalize_cm(m))]))
+        row = seen[to_2d_tuple(normalize_cm(m))]
+        print('%2d'%(i+1), '\t',
+              m, '\t',
+              len( row['seen']), '\t',
+              '%.2f' % (mean(row['num_concepts'])) if len(row['num_concepts'])>0 else 'null' , '\t',
+              '%.2f' % (mean(row['phi_concepts'])) if len(row['phi_concepts'])>0 else 'null' , '\t',
+              '%.2f' % (mean(row['phi_network'])) if len(row['phi_network'])>0 else 'null'
+
+              
+        )
     
     print("Duplicate TPMS:", duplicate_tpms)
     
 
+
+
+
+
+    
 
 
     # 1.b) same as (1a) with the possibility of XORs for those nodes that

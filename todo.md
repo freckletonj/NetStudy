@@ -55,7 +55,13 @@ And then yes the nodes in the motifs should have different mechanisms, for 1a) t
 
 all 8 activation states - perfect
 
-so to clarify, for each condition, I will calculate 1. num of concepts, 2. phi of concepts, 3. Phi of network. I will do this for all current_states across all possible combinations of AND and OR nodes (single connections are COPY), and XOR when the condition asks for it.
+so to clarify, for each condition, I will calculate
+
+1. avg num of concepts
+2. phi of concepts
+3. Phi of network
+
+I will do this for all current_states across all possible combinations of AND and OR nodes (single connections are COPY), and XOR when the condition asks for it.
 
 I guess this will boil down to 3 charts per condition (that can be overlaid) for each dependent variable.
 
