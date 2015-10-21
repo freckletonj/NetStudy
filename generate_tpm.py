@@ -20,8 +20,8 @@ RANDOM =  None
 MAJORITY =  lambda xs: sum(xs) > len(xs)/2
 MINORITY =  lambda xs: sum(xs) <= len(xs)/2
 PARITY =  lambda xs: sum(xs) % 2 == 0 #even parity
-GREATER_THAN_THRESHOLD = None
-LESS_THAN_THRESHOLD = None
+GREATER_THAN = lambda threshold: lambda xs: sum(xs) >= threshold
+LESS_THAN = lambda threshold: lambda xs: sum(xs) < threshold
 NULL = lambda _: False
 
 
@@ -63,8 +63,8 @@ def nodes_to_name(nodes):
         MAJORITY: "MAJORITY",
         MINORITY: "MINORITY",
         PARITY: "PARITY",
-        GREATER_THAN_THRESHOLD: "GREATER_THAN_THRESHOLD",
-        LESS_THAN_THRESHOLD: "LESS_THAN_THRESHOLD",
+        GREATER_THAN: "GREATER_THAN",
+        LESS_THAN: "LESS_THAN",
         NULL: "NULL",
     }
         
@@ -93,8 +93,8 @@ def nodes_to_short(nodes):
         MAJORITY: "J",
         MINORITY: "M",
         PARITY: "P",
-        GREATER_THAN_THRESHOLD: "G",
-        LESS_THAN_THRESHOLD: "L",
+        GREATER_THAN: "G",
+        LESS_THAN: "L",
         NULL: "U",
     }
         
