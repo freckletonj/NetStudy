@@ -1,3 +1,13 @@
 NUMBER_OF_CORES : 3
 CACHING_BACKEND : 'db'
 CACHE_BIGMIPS : True
+LOGGING_CONFIG:
+    format: "%(asctime)s [%(name)s.%(funcName)s] %(levelname)s: %(message)s"
+    # `level` can be "DEBUG", "INFO", "WARNING", "ERROR", or "CRITICAL".
+    file:
+        enabled: true
+        level: "INFO"
+        filename: "pyphi.log"
+    stdout:
+        enabled: false
+        level: "INFO"
